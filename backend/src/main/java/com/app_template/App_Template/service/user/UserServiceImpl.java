@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import com.app_template.App_Template.auth.UpdateInfosRequest;
 import com.app_template.App_Template.auth.UpdatePasswordRequest;
 import com.app_template.App_Template.entity.User;
-import com.app_template.App_Template.entity.UserDto;
+import com.app_template.App_Template.dto.UserDto;
 import com.app_template.App_Template.repository.UserRepository;
 import com.app_template.App_Template.service.image.ImageService;
 import com.app_template.App_Template.tfa.TwoFactorAuthenticationService;

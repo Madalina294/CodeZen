@@ -13,7 +13,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.app_template.App_Template.entity.UserDto;
+import com.app_template.App_Template.dto.UserDto;
 import com.app_template.App_Template.service.admin.AdminService;
 
 import jakarta.persistence.EntityNotFoundException;

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.app_template.App_Template.auth.UpdatePasswordRequest;
 import com.app_template.App_Template.entity.User;
-import com.app_template.App_Template.entity.UserDto;
+import com.app_template.App_Template.dto.UserDto;
 import com.app_template.App_Template.repository.UserRepository;
 import com.app_template.App_Template.service.user.UserService;
 

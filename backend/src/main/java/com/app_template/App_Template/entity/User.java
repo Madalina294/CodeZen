@@ -3,6 +3,7 @@ package com.app_template.App_Template.entity;
 import java.time.LocalDateTime;
 import java.util.Collection;
 
+import com.app_template.App_Template.dto.UserDto;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 

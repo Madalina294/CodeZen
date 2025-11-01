@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
 import com.app_template.App_Template.entity.User;
-import com.app_template.App_Template.entity.UserDto;
+import com.app_template.App_Template.dto.UserDto;
 import com.app_template.App_Template.enums.Role;
 import com.app_template.App_Template.repository.UserRepository;
 import com.app_template.App_Template.service.auth.EmailService;

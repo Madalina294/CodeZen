@@ -28,6 +28,7 @@
     </scm>
     <properties>
         <java.version>21</java.version>
+        <flyway.version>11.0.0</flyway.version>
     </properties>
     <dependencies>
         <dependency>
@@ -104,6 +105,18 @@
             <groupId>dev.samstevens.totp</groupId>
             <artifactId>totp</artifactId>
             <version>1.7.1</version>
+        </dependency>
+        <!-- WebFlux pentru apeluri asincrone la Ollama -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+
+        <!-- Java Diff Utils pentru comparații de cod -->
+        <dependency>
+            <groupId>io.github.java-diff-utils</groupId>
+            <artifactId>java-diff-utils</artifactId>
+            <version>4.12</version>
         </dependency>
     </dependencies>
 
