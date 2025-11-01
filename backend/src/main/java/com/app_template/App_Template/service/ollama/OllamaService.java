@@ -9,6 +9,8 @@ import org.springframework.web.reactive.function.client.WebClient;
 
 import com.app_template.App_Template.entity.CustomGuideline;
 import com.app_template.App_Template.entity.Project;
+import com.app_template.App_Template.entity.Review;
+import com.app_template.App_Template.entity.ReviewComment;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -128,26 +130,113 @@ public class OllamaService {
         prompt.append(code);
         prompt.append("\n```\n\n");
 
-        prompt.append("Please provide a comprehensive code review in the following JSON format:\n");
+        prompt.append("CRITICAL INSTRUCTION: You MUST respond with ONLY valid JSON. No text before or after the JSON object.\n\n");
+        prompt.append("REQUIRED JSON STRUCTURE (copy this format exactly):\n");
         prompt.append("{\n");
-        prompt.append("  \"summary\": \"Brief overview of the code quality\",\n");
+        prompt.append("  \"summary\": \"A brief one-sentence overview of the overall code quality and purpose\",\n");
         prompt.append("  \"findings\": [\n");
-        prompt.append("    {\"line\": 42, \"type\": \"bug|style|performance|security\", \"message\": \"Issue description\", \"suggestion\": \"How to fix it\"}\n");
+        prompt.append("    {\"line\": 42, \"type\": \"bug\", \"message\": \"Description of the issue\", \"suggestion\": \"How to fix it\"},\n");
+        prompt.append("    {\"line\": 15, \"type\": \"performance\", \"message\": \"Performance concern\", \"suggestion\": \"Optimization suggestion\"}\n");
         prompt.append("  ],\n");
-        prompt.append("  \"effort_estimation\": \"3/10\"\n");
+        prompt.append("  \"effort_estimation\": \"X/10\"\n");
         prompt.append("}\n\n");
-        prompt.append("Review for:\n");
+        prompt.append("REVIEW CRITERIA (analyze for):\n");
         prompt.append("- Code quality and best practices\n");
         prompt.append("- Performance optimizations\n");
         prompt.append("- Security vulnerabilities\n");
-        prompt.append("- Style consistency\n");
-        prompt.append("- Potential bugs\n\n");
-        prompt.append("Write all comments in English. Return only valid JSON.");
+        prompt.append("- Style consistency and maintainability\n");
+        prompt.append("- Potential bugs and edge cases\n\n");
+        prompt.append("EFFORT ESTIMATION GUIDE:\n");
+        prompt.append("- 1-3/10: Minor style issues, very easy to fix\n");
+        prompt.append("- 4-6/10: Some bugs or refactoring needed, moderate effort\n");
+        prompt.append("- 7-9/10: Multiple issues, significant refactoring required\n");
+        prompt.append("- 10/10: Major rewrite needed\n\n");
+        prompt.append("IMPORTANT: Start your response directly with { and end with }. No markdown code blocks, no explanations, ONLY the JSON object.");
 
         return prompt.toString();
     }
 
+    /**
+     * Answer user question about a review.
+     * Provides context-aware responses based on the original review.
+     * 
+     * @param question User's question
+     * @param review The review context
+     * @param conversationHistory Previous messages for context
+     * @return AI's response
+     */
+    public Mono<String> answerReviewQuestion(String question, Review review, List<ReviewComment> conversationHistory) {
+        String prompt = buildChatPrompt(question, review, conversationHistory);
 
+        OllamaRequest request = OllamaRequest.builder()
+                .model(ollamaModel)
+                .prompt(prompt)
+                .stream(false)
+                .build();
 
+        log.info("Sending chat question to Ollama for review: {}", review.getId());
 
+        return getWebClient()
+                .post()
+                .uri("/api/generate")
+                .contentType(MediaType.APPLICATION_JSON)
+                .bodyValue(request)
+                .retrieve()
+                .bodyToMono(String.class)
+                .map(response -> {
+                    try {
+                        JsonNode jsonNode = objectMapper.readTree(response);
+                        return jsonNode.path("response").asText();
+                    } catch (Exception e) {
+                        log.error("Error parsing Ollama response", e);
+                        return "I apologize, but I encountered an error processing your question.";
+                    }
+                })
+                .onErrorResume(error -> {
+                    log.error("Error calling Ollama API for chat", error);
+                    return Mono.just("I apologize, but I'm currently unable to answer. Please try again later.");
+                });
+    }
+
+    /**
+     * Build chat prompt with review context and conversation history.
+     */
+    private String buildChatPrompt(String question, Review review, List<ReviewComment> conversationHistory) {
+        StringBuilder prompt = new StringBuilder();
+
+        prompt.append("You are an AI code review assistant. The user is asking a question about a code review you previously performed.\n\n");
+
+        prompt.append("ORIGINAL CODE THAT WAS REVIEWED:\n");
+        prompt.append("```\n");
+        prompt.append(review.getCodeSnapshot());
+        prompt.append("\n```\n\n");
+
+        prompt.append("YOUR PREVIOUS REVIEW:\n");
+        prompt.append(review.getLlmResponse());
+        prompt.append("\n\n");
+
+        // Add conversation history for context
+        if (conversationHistory != null && !conversationHistory.isEmpty()) {
+            prompt.append("CONVERSATION HISTORY:\n");
+            for (ReviewComment comment : conversationHistory) {
+                if ("USER".equals(comment.getRole())) {
+                    prompt.append("User: ").append(comment.getMessage()).append("\n");
+                } else {
+                    prompt.append("You: ").append(comment.getMessage()).append("\n");
+                }
+            }
+            prompt.append("\n");
+        }
+
+        prompt.append("USER'S QUESTION:\n");
+        prompt.append(question);
+        prompt.append("\n\n");
+
+        prompt.append("Please provide a helpful, clear, and concise answer to the user's question. ");
+        prompt.append("Base your response on the code and review above. ");
+        prompt.append("If the question asks for code examples or fixes, provide them in a clear format. ");
+        prompt.append("Keep your response focused and relevant to the code review context.");
+
+        return prompt.toString();
+    }
 }

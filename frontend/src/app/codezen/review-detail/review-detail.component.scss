@@ -108,5 +108,168 @@
         word-wrap: break-word;
       }
     }
+
+    // Chat Section Styles
+    .chat-card {
+      border-radius: 8px;
+      
+      .chat-container {
+        .chat-messages {
+          max-height: 500px;
+          overflow-y: auto;
+          margin-bottom: 16px;
+          padding: 16px;
+          background-color: #fafafa;
+          border-radius: 8px;
+          
+          .empty-chat {
+            text-align: center;
+            padding: 40px 20px;
+            color: #8c8c8c;
+            
+            .empty-icon {
+              font-size: 48px;
+              color: #d9d9d9;
+              margin-bottom: 16px;
+            }
+            
+            p {
+              margin: 0;
+              font-size: 14px;
+            }
+          }
+          
+          ::ng-deep .ant-list-item {
+            border: none;
+            padding: 12px 0;
+            
+            &.user-message {
+              .message-content {
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                margin-left: auto;
+                
+                .message-header {
+                  color: rgba(255, 255, 255, 0.9);
+                  
+                  .message-icon {
+                    color: white;
+                  }
+                }
+              }
+            }
+            
+            &.ai-message {
+              .message-content {
+                background: white;
+                border: 1px solid #e8e8e8;
+                
+                .message-header {
+                  color: #595959;
+                  
+                  .message-icon {
+                    color: #1890ff;
+                  }
+                }
+                
+                .message-text {
+                  color: #262626;
+                }
+              }
+            }
+          }
+          
+          .message-content {
+            max-width: 80%;
+            padding: 12px 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            
+            .message-header {
+              display: flex;
+              align-items: center;
+              gap: 8px;
+              margin-bottom: 8px;
+              font-size: 12px;
+              
+              .message-icon {
+                font-size: 16px;
+              }
+              
+              .message-role {
+                font-weight: 600;
+              }
+              
+              .message-time {
+                margin-left: auto;
+                opacity: 0.7;
+                font-size: 11px;
+              }
+            }
+            
+            .message-text {
+              line-height: 1.6;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+          }
+        }
+        
+        .chat-input-container {
+          position: relative;
+          
+          ::ng-deep .ant-input-group {
+            display: flex;
+            align-items: flex-end;
+            
+            textarea {
+              resize: none;
+              border-radius: 8px;
+              padding: 12px;
+              font-size: 14px;
+              
+              &:focus {
+                border-color: #667eea;
+                box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+              }
+            }
+            
+            .ant-input-group-addon {
+              background: transparent;
+              border: none;
+              padding: 0 0 8px 8px;
+            }
+          }
+          
+          .send-button {
+            border-radius: 8px;
+            height: 40px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border: none;
+            
+            &:hover:not(:disabled) {
+              background: linear-gradient(135deg, #5568d3 0%, #6b4193 100%);
+            }
+            
+            &:disabled {
+              background: #d9d9d9;
+            }
+          }
+          
+          .chat-hint {
+            margin-top: 8px;
+            font-size: 12px;
+            color: #8c8c8c;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            
+            span[nz-icon] {
+              font-size: 14px;
+            }
+          }
+        }
+      }
+    }
   }
 }

@@ -18,30 +18,49 @@
           <nz-descriptions-item nzTitle="Timestamp">
             {{ getFormattedDate(review()!.timestamp) }}
           </nz-descriptions-item>
-          <nz-descriptions-item nzTitle="Effort Estimation" *ngIf="review()!.effortEstimation">
-            <nz-tag [nzColor]="'green'">{{ review()!.effortEstimation }}</nz-tag>
+          <nz-descriptions-item
+            nzTitle="Effort Estimation"
+            *ngIf="review()!.effortEstimation"
+          >
+            <nz-tag [nzColor]="'green'">{{
+              review()!.effortEstimation
+            }}</nz-tag>
           </nz-descriptions-item>
         </nz-descriptions>
       </nz-card>
 
       <!-- AI Review Summary -->
-      <nz-card class="summary-card" nzTitle="AI Review Summary" *ngIf="parsedReview()">
+      <nz-card
+        class="summary-card"
+        nzTitle="AI Review Summary"
+        *ngIf="parsedReview()"
+      >
         <nz-alert
           nzType="info"
           [nzMessage]="parsedReview()!.summary"
-          nzShowIcon>
+          nzShowIcon
+        >
         </nz-alert>
       </nz-card>
 
       <!-- Findings -->
-      <nz-card class="findings-card" nzTitle="Findings" *ngIf="parsedReview() && parsedReview()!.findings.length > 0">
-        <div class="finding-item" *ngFor="let finding of parsedReview()!.findings; let i = index">
+      <nz-card
+        class="findings-card"
+        nzTitle="Findings"
+        *ngIf="parsedReview() && parsedReview()!.findings.length > 0"
+      >
+        <div
+          class="finding-item"
+          *ngFor="let finding of parsedReview()!.findings; let i = index"
+        >
           <div class="finding-header">
             <nz-tag [nzColor]="getTagColor(finding.type)">
               <span nz-icon [nzType]="getTypeIcon(finding.type)"></span>
               {{ finding.type | uppercase }}
             </nz-tag>
-            <span class="finding-line" *ngIf="finding.line">Line {{ finding.line }}</span>
+            <span class="finding-line" *ngIf="finding.line"
+              >Line {{ finding.line }}</span
+            >
           </div>
 
           <div class="finding-message">
@@ -52,7 +71,9 @@
             <strong>Suggestion:</strong> {{ finding.suggestion }}
           </div>
 
-          <nz-divider *ngIf="i < parsedReview()!.findings.length - 1"></nz-divider>
+          <nz-divider
+            *ngIf="i < parsedReview()!.findings.length - 1"
+          ></nz-divider>
         </div>
       </nz-card>
 
@@ -62,8 +83,100 @@
       </nz-card>
 
       <!-- Raw LLM Response (for debugging) -->
-      <nz-card class="raw-response-card" nzTitle="Raw AI Response" *ngIf="review()!.llmResponse">
+      <nz-card
+        class="raw-response-card"
+        nzTitle="Raw AI Response"
+        *ngIf="review()!.llmResponse"
+      >
         <pre class="raw-response">{{ review()!.llmResponse }}</pre>
+      </nz-card>
+
+      <!-- AI Chat Section -->
+      <nz-card class="chat-card" nzTitle="Ask AI About This Review">
+        <div class="chat-container">
+          <!-- Chat Messages -->
+          <nz-spin [nzSpinning]="loadingComments()">
+            <div class="chat-messages">
+              <div
+                *ngIf="comments().length === 0 && !loadingComments()"
+                class="empty-chat"
+              >
+                <span
+                  nz-icon
+                  nzType="message"
+                  nzTheme="outline"
+                  class="empty-icon"
+                ></span>
+                <p>
+                  No questions yet. Ask the AI anything about this code review!
+                </p>
+              </div>
+
+              <nz-list
+                [nzDataSource]="comments()"
+                [nzRenderItem]="messageTemplate"
+              >
+                <ng-template #messageTemplate let-comment>
+                  <nz-list-item
+                    [class]="
+                      comment.role === 'USER' ? 'user-message' : 'ai-message'
+                    "
+                  >
+                    <div class="message-content">
+                      <div class="message-header">
+                        <span
+                          nz-icon
+                          [nzType]="comment.role === 'USER' ? 'user' : 'robot'"
+                          class="message-icon"
+                        >
+                        </span>
+                        <span class="message-role">{{
+                          comment.role === "USER" ? "You" : "AI Assistant"
+                        }}</span>
+                        <span class="message-time">{{
+                          getFormattedDate(comment.timestamp)
+                        }}</span>
+                      </div>
+                      <div class="message-text">{{ comment.message }}</div>
+                    </div>
+                  </nz-list-item>
+                </ng-template>
+              </nz-list>
+            </div>
+          </nz-spin>
+
+          <!-- Chat Input -->
+          <div class="chat-input-container">
+            <nz-input-group [nzSuffix]="suffixTemplate">
+              <textarea
+                nz-input
+                [(ngModel)]="userQuestion"
+                placeholder="Ask a question about this review... (e.g., 'Can you explain the security issue in more detail?')"
+                [nzAutosize]="{ minRows: 2, maxRows: 4 }"
+                (keydown.enter)="onEnterPress($event)"
+                [disabled]="sendingQuestion()"
+              >
+              </textarea>
+            </nz-input-group>
+            <ng-template #suffixTemplate>
+              <button
+                nz-button
+                nzType="primary"
+                [nzLoading]="sendingQuestion()"
+                [disabled]="!userQuestion.trim() || sendingQuestion()"
+                (click)="askQuestion()"
+                class="send-button"
+              >
+                <span nz-icon nzType="send"></span>
+                Send
+              </button>
+            </ng-template>
+            <div class="chat-hint">
+              <span nz-icon nzType="info-circle"></span>
+              Press Ctrl+Enter to send your question
+            </div>
+          </div>
+        </div>
       </nz-card>
     </div>
   </nz-spin>

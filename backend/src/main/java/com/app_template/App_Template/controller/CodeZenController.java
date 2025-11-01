@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.app_template.App_Template.dto.CommentRequest;
+import com.app_template.App_Template.dto.CommentResponse;
 import com.app_template.App_Template.dto.GuidelineRequest;
 import com.app_template.App_Template.dto.GuidelineResponse;
 import com.app_template.App_Template.dto.ProjectRequest;
@@ -152,5 +154,32 @@ public class CodeZenController {
         User user = getCurrentUser();
         List<GuidelineResponse> guidelines = codeZenService.getGuidelines(id, user);
         return ResponseEntity.ok(guidelines);
+    }
+
+    /**
+     * POST /api/v1/projects/{id}/reviews/{reviewId}/comments
+     * Post a question/comment on a review and get AI response.
+     */
+    @PostMapping("/{id}/reviews/{reviewId}/comments")
+    public Mono<ResponseEntity<CommentResponse>> postComment(
+            @PathVariable Long id,
+            @PathVariable Long reviewId,
+            @RequestBody CommentRequest request) {
+        User user = getCurrentUser();
+        return codeZenService.postComment(id, reviewId, request, user)
+                .map(comment -> ResponseEntity.status(HttpStatus.CREATED).body(comment));
+    }
+
+    /**
+     * GET /api/v1/projects/{id}/reviews/{reviewId}/comments
+     * Get all comments/conversation for a review.
+     */
+    @GetMapping("/{id}/reviews/{reviewId}/comments")
+    public ResponseEntity<List<CommentResponse>> getComments(
+            @PathVariable Long id,
+            @PathVariable Long reviewId) {
+        User user = getCurrentUser();
+        List<CommentResponse> comments = codeZenService.getComments(id, reviewId, user);
+        return ResponseEntity.ok(comments);
     }
 }

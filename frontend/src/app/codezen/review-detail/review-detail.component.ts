@@ -1,6 +1,7 @@
 import { Component, OnInit, signal } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzIconModule } from 'ng-zorro-antd/icon';
@@ -9,10 +10,13 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDescriptionsModule } from 'ng-zorro-antd/descriptions';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
+import { NzInputModule } from 'ng-zorro-antd/input';
+import { NzListModule } from 'ng-zorro-antd/list';
 import { NzMessageService } from 'ng-zorro-antd/message';
 
 import { CodezenService } from '../service/codezen.service';
 import { ReviewResponse, ParsedReview } from '../../models/review-response';
+import { CommentResponse } from '../../models/comment-response';
 
 /**
  * ReviewDetailComponent - Displays detailed code review results from AI.
@@ -24,6 +28,7 @@ import { ReviewResponse, ParsedReview } from '../../models/review-response';
   standalone: true,
   imports: [
     CommonModule,
+    FormsModule,
     NzCardModule,
     NzButtonModule,
     NzIconModule,
@@ -31,7 +36,9 @@ import { ReviewResponse, ParsedReview } from '../../models/review-response';
     NzTagModule,
     NzDescriptionsModule,
     NzAlertModule,
-    NzDividerModule
+    NzDividerModule,
+    NzInputModule,
+    NzListModule
   ],
   templateUrl: './review-detail.component.html',
   styleUrls: ['./review-detail.component.scss']
@@ -45,6 +52,12 @@ export class ReviewDetailComponent implements OnInit {
   parsedReview = signal<ParsedReview | null>(null);
   loading = signal(false);
 
+  // Chat signals
+  comments = signal<CommentResponse[]>([]);
+  userQuestion = '';
+  sendingQuestion = signal(false);
+  loadingComments = signal(false);
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -57,6 +70,7 @@ export class ReviewDetailComponent implements OnInit {
       this.projectId = +params['projectId'];
       this.reviewId = +params['reviewId'];
       this.loadReview();
+      this.loadComments();
     });
   }
 
@@ -127,5 +141,72 @@ export class ReviewDetailComponent implements OnInit {
       'style': 'highlight'
     };
     return icons[type] || 'info-circle';
+  }
+
+  /**
+   * Load comments/chat history for this review
+   */
+  loadComments(): void {
+    this.loadingComments.set(true);
+    this.codezenService.getComments(this.projectId, this.reviewId).subscribe({
+      next: (comments) => {
+        this.comments.set(comments);
+        this.loadingComments.set(false);
+      },
+      error: (error) => {
+        console.error('Error loading comments:', error);
+        this.loadingComments.set(false);
+      }
+    });
+  }
+
+  /**
+   * Handle Enter key press in textarea
+   */
+  onEnterPress(event: Event): void {
+    const keyboardEvent = event as KeyboardEvent;
+    if (keyboardEvent.ctrlKey) {
+      keyboardEvent.preventDefault();
+      this.askQuestion();
+    }
+  }
+
+  /**
+   * Send a question to AI about the review
+   */
+  askQuestion(): void {
+    if (!this.userQuestion.trim()) {
+      this.message.warning('Please enter a question');
+      return;
+    }
+
+    this.sendingQuestion.set(true);
+    const question = this.userQuestion.trim();
+
+    // Add user question to UI immediately
+    this.comments.update(comments => [...comments, {
+      id: Date.now(),
+      message: question,
+      role: 'USER',
+      timestamp: new Date().toISOString(),
+      reviewId: this.reviewId,
+      userId: 0
+    }]);
+
+    this.codezenService.postComment(this.projectId, this.reviewId, { message: question }).subscribe({
+      next: (aiResponse) => {
+        // Replace temporary user comment with actual response from server
+        this.loadComments();
+        this.userQuestion = '';
+        this.sendingQuestion.set(false);
+      },
+      error: (error) => {
+        console.error('Error asking question:', error);
+        this.message.error('Failed to get AI response');
+        // Remove temporary user comment on error
+        this.comments.update(comments => comments.filter(c => c.id !== Date.now()));
+        this.sendingQuestion.set(false);
+      }
+    });
   }
 }
