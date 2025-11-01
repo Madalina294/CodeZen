@@ -1,0 +1,23 @@
+# IntelliJ / IDE
+.idea/
+*.iml
+
+# Java / Maven
+target/
+*.log
+
+# Environment files
+application.properties
+application.yml
+.env
+
+# Node / Angular
+node_modules/
+dist/
+.angular/
+.tmp/
+coverage/
+
+# OS files
+.DS_Store
+Thumbs.db
